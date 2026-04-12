@@ -29,3 +29,8 @@ void ATT_TankPawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void ATT_TankPawn::HandleDestruction()
+{
+	Super::HandleDestruction();
+}
+

@@ -65,9 +65,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement|Aim")
 	float AimSpeed = 100.f;
 
-private:
 	void HandleMove(const FInputActionValue& ActionValue);
 	void HandleAim(const FInputActionValue& ActionValue);
 	void HandleFire(const FInputActionValue& ActionValue);
+	void UpdateAimUnderCursor();
 	
 };

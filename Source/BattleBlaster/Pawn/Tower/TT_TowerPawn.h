@@ -13,5 +13,15 @@ UCLASS()
 class BATTLEBLASTER_API ATT_TowerPawn : public ATT_BasePawn
 {
 	GENERATED_BODY()
+public:
+	virtual void HandleDestruction() override;
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	bool bRegisteredWithGameMode = false;
+
 	
 };

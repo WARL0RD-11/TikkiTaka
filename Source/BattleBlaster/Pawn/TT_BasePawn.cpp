@@ -4,6 +4,7 @@
 #include "TT_BasePawn.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/ArrowComponent.h"
+#include "BattleBlaster/Components/TT_HealthComponent.h"
 
 ATT_BasePawn::ATT_BasePawn()
 {
@@ -21,6 +22,12 @@ ATT_BasePawn::ATT_BasePawn()
 	ProjectileSpawnPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("Projectile Spawn Point"));	
 	ProjectileSpawnPoint->SetupAttachment(TurretMeshComponent);
 
+	HealthComponent = CreateDefaultSubobject<UTT_HealthComponent>(TEXT("Health Component"));
+
+}
+
+void ATT_BasePawn::HandleDestruction()
+{
 }
 
 void ATT_BasePawn::BeginPlay()

@@ -8,6 +8,8 @@
 
 class UCapsuleComponent;
 class UArrowComponent;
+class ATT_Missile;	
+class UTT_HealthComponent;	
 
 UCLASS()
 class BATTLEBLASTER_API ATT_BasePawn : public APawn
@@ -29,6 +31,15 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "VALUE")
 	TObjectPtr<UArrowComponent> ProjectileSpawnPoint;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile")
+	TSubclassOf<ATT_Missile> MissileClass;
+
+	UPROPERTY(EditAnywhere, Category = "Pawn")
+	TObjectPtr<UTT_HealthComponent> HealthComponent;	
+
+	UFUNCTION()
+	virtual void HandleDestruction();	
 
 protected:
 	virtual void BeginPlay() override;

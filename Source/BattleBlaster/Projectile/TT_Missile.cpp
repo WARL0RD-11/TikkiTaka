@@ -3,6 +3,7 @@
 
 #include "TT_Missile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ATT_Missile::ATT_Missile()
 {
@@ -10,6 +11,9 @@ ATT_Missile::ATT_Missile()
 
 	MissileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MissileMesh"));
 	RootComponent = MissileMesh;	
+
+	MissileMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);	
+	MissileMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);	
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->InitialSpeed = 1000.f;
@@ -22,8 +26,28 @@ ATT_Missile::ATT_Missile()
 void ATT_Missile::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	MissileMesh->OnComponentHit.AddDynamic(this, &ATT_Missile::OnHit);
+
 }
+
+void ATT_Missile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	//Damage using HealthComponent on OtherActor
+
+	AActor* mOwner = GetOwner();	
+	if (!mOwner) return;
+
+	if(!OtherActor || OtherActor == mOwner || OtherActor == this) return;
+
+	UGameplayStatics::ApplyDamage(OtherActor, Damage, mOwner->GetInstigatorController(), this, nullptr);
+
+	//Sound
+
+	Destroy();
+}
+
+
 
 void ATT_Missile::Tick(float DeltaTime)
 {

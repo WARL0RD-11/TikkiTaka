@@ -23,6 +23,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Missile|Movement")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovementComponent;
 
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
+		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UPROPERTY(EditAnywhere, Category = "Missile|Damage")
+	float Damage = 25.f;
+
 protected:
 	virtual void BeginPlay() override;	
 

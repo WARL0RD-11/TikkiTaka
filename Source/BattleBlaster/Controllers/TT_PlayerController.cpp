@@ -8,6 +8,8 @@
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Engine/LocalPlayer.h"
 #include "BattleBlaster/Commands/Move/TT_MoveCommand.h"
 #include "BattleBlaster/Commands/Aim/TT_AimCommand.h"
 #include "BattleBlaster/Commands/Fire/TT_FireCommand.h"
@@ -27,6 +29,26 @@ void ATT_PlayerController::BeginPlay()
 	auto* USubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 
 	USubsystem->AddMappingContext(MappingContext, 0);
+
+	SetShowMouseCursor(true);
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputMode);
+
+	PrimaryActorTick.bCanEverTick = true;
+}
+
+void ATT_PlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	UpdateAimUnderCursor();
+
+	//Print Command Map for debugging
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Command Map: %d"), CommandMap.Num()));
 }
 
 void ATT_PlayerController::SetupInputComponent()
@@ -36,7 +58,6 @@ void ATT_PlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATT_PlayerController::HandleMove);
-		EIC->BindAction(AimAction, ETriggerEvent::Triggered, this, &ATT_PlayerController::HandleAim);
 		EIC->BindAction(FireAction, ETriggerEvent::Started, this, &ATT_PlayerController::HandleFire);
 	}
 }
@@ -56,11 +77,6 @@ void ATT_PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 
 	Super::EndPlay(EndPlayReason);
-}
-
-void ATT_PlayerController::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);	
 }
 
 void ATT_PlayerController::HandleMove(const FInputActionValue& ActionValue)
@@ -90,5 +106,32 @@ void ATT_PlayerController::HandleFire(const FInputActionValue& ActionValue)
 	if (PlayerPawnTank && CommandMap.Contains(EInputAction::Fire))
 	{
 		CommandMap[EInputAction::Fire]->Execute(Cast<ATT_BasePawn>(PlayerPawnTank), ActionValue, HitResult.ImpactPoint, AimSpeed);
+	}
+}
+
+void ATT_PlayerController::UpdateAimUnderCursor()
+{
+	if (!PlayerPawnTank)
+	{
+		return;
+	}
+
+	FHitResult HitResult;
+	const bool bHit = GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
+
+	if (!bHit)
+	{
+		return;
+	}
+
+	if (CommandMap.Contains(EInputAction::Aim))
+	{
+		const FInputActionValue DummyValue;
+		CommandMap[EInputAction::Aim]->Execute(
+			Cast<ATT_BasePawn>(PlayerPawnTank),
+			DummyValue,
+			HitResult.ImpactPoint,
+			AimSpeed
+		);
 	}
 }

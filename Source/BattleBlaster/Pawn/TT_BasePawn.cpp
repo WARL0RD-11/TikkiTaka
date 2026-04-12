@@ -3,6 +3,7 @@
 
 #include "TT_BasePawn.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/ArrowComponent.h"
 
 ATT_BasePawn::ATT_BasePawn()
 {
@@ -16,6 +17,9 @@ ATT_BasePawn::ATT_BasePawn()
 
 	TurretMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Turret Mesh Component"));
 	TurretMeshComponent->SetupAttachment(BaseMeshComponent);
+
+	ProjectileSpawnPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("Projectile Spawn Point"));	
+	ProjectileSpawnPoint->SetupAttachment(TurretMeshComponent);
 
 }
 

@@ -37,7 +37,7 @@ void ATT_PlayerController::SetupInputComponent()
 	{
 		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATT_PlayerController::HandleMove);
 		EIC->BindAction(AimAction, ETriggerEvent::Triggered, this, &ATT_PlayerController::HandleAim);
-		EIC->BindAction(FireAction, ETriggerEvent::Triggered, this, &ATT_PlayerController::HandleFire);
+		EIC->BindAction(FireAction, ETriggerEvent::Started, this, &ATT_PlayerController::HandleFire);
 	}
 }
 

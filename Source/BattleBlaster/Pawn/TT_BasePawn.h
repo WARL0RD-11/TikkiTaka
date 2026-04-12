@@ -7,6 +7,7 @@
 #include "TT_BasePawn.generated.h"
 
 class UCapsuleComponent;
+class UArrowComponent;
 
 UCLASS()
 class BATTLEBLASTER_API ATT_BasePawn : public APawn
@@ -25,6 +26,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Pawn")
 	TObjectPtr<UStaticMeshComponent> TurretMeshComponent;
+
+	UPROPERTY(EditAnywhere, Category = "VALUE")
+	TObjectPtr<UArrowComponent> ProjectileSpawnPoint;
 
 protected:
 	virtual void BeginPlay() override;

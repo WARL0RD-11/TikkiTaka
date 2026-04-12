@@ -17,17 +17,19 @@ public:
 	ATT_BasePawn();
 	virtual void Tick(float DeltaTime) override;
 
-protected:
-	virtual void BeginPlay() override;
-
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Pawn")
 	TObjectPtr<UStaticMeshComponent> BaseMeshComponent;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Pawn")
 	TObjectPtr<UStaticMeshComponent> TurretMeshComponent;
+
+protected:
+	virtual void BeginPlay() override;
+
+
 
 private:	
 

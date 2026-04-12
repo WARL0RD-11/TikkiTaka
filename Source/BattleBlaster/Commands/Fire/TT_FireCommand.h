@@ -8,14 +8,15 @@
 /**
  * 
  */
-class BATTLEBLASTER_API TT_MoveCommand : public ICommand
+class BATTLEBLASTER_API TT_FireCommand : public ICommand
 {
 public:
-	TT_MoveCommand();
-
-	void Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const float& InSpeedModifier, 
+	TT_FireCommand();
+	void Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const float& InSpeedModifier,
 		const float& InTurnModifier) override;
-	
+
 	void Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const FVector& InDirection,
 		const float& InAimModifier) override;
+
+
 };

@@ -41,6 +41,16 @@ public:
 	UFUNCTION()
 	virtual void HandleDestruction();	
 
+
+	UFUNCTION()
+	virtual void RotateBase(float Value);
+
+	UFUNCTION()
+	virtual void MoveForward(float Value);
+
+	UFUNCTION()
+	virtual FVector GetPawnForward() const;
+
 protected:
 	virtual void BeginPlay() override;
 

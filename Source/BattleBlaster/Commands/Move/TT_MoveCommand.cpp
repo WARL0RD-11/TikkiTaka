@@ -37,3 +37,31 @@ void TT_MoveCommand::Execute(ATT_BasePawn* InPawn, const FInputActionValue& InVa
 {
 }
 
+void TT_MoveCommand::ExecuteMoveToLocation(ATT_BasePawn* InPawn, const FVector& TargetLocation, float DeltaTime, float MoveSpeed, float TurnSpeed)
+{
+	if (!InPawn)
+	{
+		return;
+	}
+
+	const FVector ToTarget = TargetLocation - InPawn->GetActorLocation();
+	const FVector ToTarget2D(ToTarget.X, ToTarget.Y, 0.f);
+
+	if (ToTarget2D.IsNearlyZero())
+	{
+		return;
+	}
+
+	const FVector Forward = InPawn->GetActorForwardVector();
+	const FVector DesiredDir = ToTarget2D.GetSafeNormal();
+
+	const float CrossZ = FVector::CrossProduct(Forward, DesiredDir).Z;
+	const float Dot = FVector::DotProduct(Forward, DesiredDir);
+
+	const float TurnInput = FMath::Clamp(CrossZ, -1.f, 1.f);
+	const float ForwardInput = Dot > 0.2f ? 1.f : 0.3f;
+
+	InPawn->RotateBase(TurnInput * TurnSpeed);
+	InPawn->MoveForward(ForwardInput * MoveSpeed * DeltaTime);
+}
+

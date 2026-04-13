@@ -41,3 +41,18 @@ void ATT_BasePawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+void ATT_BasePawn::RotateBase(float Value)
+{
+	AddActorLocalRotation(FRotator(0.f, Value, 0.f));
+}
+
+void ATT_BasePawn::MoveForward(float Value)
+{
+	AddActorLocalOffset(FVector(Value, 0.f, 0.f), true);
+}
+
+FVector ATT_BasePawn::GetPawnForward() const
+{
+	return GetActorForwardVector();
+}

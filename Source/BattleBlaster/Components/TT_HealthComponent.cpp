@@ -45,3 +45,17 @@ void UTT_HealthComponent::OnDamageTaken(AActor* DamagedActor, float Damage, cons
 		}
 	}
 }
+
+void UTT_HealthComponent::Heal(float HealValue)
+{ 
+	if (HealValue <= 0.f) return;
+
+	CurrentHealth = FMath::Clamp(CurrentHealth + HealValue, 0.f, MaxHealth);
+}
+
+float UTT_HealthComponent::GetHealthPercent() const
+{
+	if (MaxHealth <= 0.f) return 0.f;
+
+	return (CurrentHealth / MaxHealth) * 100.f;
+}

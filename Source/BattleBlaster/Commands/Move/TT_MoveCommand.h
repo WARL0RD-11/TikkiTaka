@@ -18,4 +18,7 @@ public:
 	
 	void Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const FVector& InDirection,
 		const float& InAimModifier) override;
+
+	void ExecuteMoveToLocation(ATT_BasePawn* InPawn, const FVector& TargetLocation, float DeltaTime, 
+		float MoveSpeed, float TurnSpeed);
 };

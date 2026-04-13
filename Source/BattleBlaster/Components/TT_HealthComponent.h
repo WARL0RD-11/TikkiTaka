@@ -26,6 +26,12 @@ public:
 	void OnDamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType, 
 		AController* EventInstigator, AActor* DamageCauser);
 
+	UFUNCTION()
+	void Heal(float HealValue);
+
+	UFUNCTION()
+	float GetHealthPercent() const;
+
 protected:
 	virtual void BeginPlay() override;
 

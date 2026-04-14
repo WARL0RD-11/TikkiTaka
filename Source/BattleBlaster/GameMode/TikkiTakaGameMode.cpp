@@ -30,6 +30,12 @@ void ATikkiTakaGameMode::ActorDied(AActor* DeadActor)
 
 		// TODO: Handle player lose condition here
 		DeadActor->Destroy();
+
+		//Restart Currrent Level after a short delay
+
+		FName CurrentLevel = *UGameplayStatics::GetCurrentLevelName(this);
+		UGameplayStatics::OpenLevel(this, CurrentLevel);
+
 		return;
 	}
 

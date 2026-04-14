@@ -14,12 +14,15 @@ ATT_Missile::ATT_Missile()
 
 	MissileMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);	
 	MissileMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);	
+	MissileMesh->SetNotifyRigidBodyCollision(true); 
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->InitialSpeed = 1000.f;
 	ProjectileMovementComponent->MaxSpeed = 1000.f;
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->bShouldBounce = false;
+
+	InitialLifeSpan = 5.f;
 
 }
 
@@ -36,7 +39,11 @@ void ATT_Missile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	//Damage using HealthComponent on OtherActor
 
 	AActor* mOwner = GetOwner();	
-	if (!mOwner) return;
+	if (!mOwner)
+	{
+		Destroy();
+		return;
+	}
 
 	if(!OtherActor || OtherActor == mOwner || OtherActor == this) return;
 

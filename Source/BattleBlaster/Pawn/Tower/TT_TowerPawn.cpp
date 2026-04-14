@@ -3,6 +3,7 @@
 
 #include "TT_TowerPawn.h"
 #include "BattleBlaster/GameMode/TikkiTakaGameMode.h"
+#include "BattleBlaster/AI/Tower/TT_TowerAIComponent.h"	
 #include "Kismet/GameplayStatics.h"
 
 void ATT_TowerPawn::BeginPlay()
@@ -29,6 +30,11 @@ void ATT_TowerPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 
 	Super::EndPlay(EndPlayReason);
+}
+
+ATT_TowerPawn::ATT_TowerPawn()
+{
+	TowerAIComponent = CreateDefaultSubobject<UTT_TowerAIComponent>(TEXT("TowerAIComponent"));	
 }
 
 void ATT_TowerPawn::HandleDestruction()

@@ -142,21 +142,21 @@ TMap<FName, bool> UTT_TowerAIComponent::BuildWorldState() const
     State.Add(TTTowerGOAPKeys::CanFire, CanFire());
     State.Add(TTTowerGOAPKeys::AttackComplete, false); 
 
-    if (GEngine && CurrentTarget && mOwnerPawn)
-    {
-        GEngine->AddOnScreenDebugMessage(
-            (int32)((PTRINT)this & 0x7fffffff),
-            0.f,
-            FColor::Yellow,
-            FString::Printf(
-                TEXT("TowerDist: %.1f | LOS:%d Align:%d CanFire:%d"),
-                FVector::Dist(mOwnerPawn->GetActorLocation(), CurrentTarget->GetActorLocation()),
-                State[TTTowerGOAPKeys::HasLineOfSight],
-                State[TTTowerGOAPKeys::TurretAligned],
-                State[TTTowerGOAPKeys::CanFire]
-            )
-        );
-    }
+    //if (GEngine && CurrentTarget && mOwnerPawn)
+    //{
+    //    GEngine->AddOnScreenDebugMessage(
+    //        (int32)((PTRINT)this & 0x7fffffff),
+    //        0.f,
+    //        FColor::Yellow,
+    //        FString::Printf(
+    //            TEXT("TowerDist: %.1f | LOS:%d Align:%d CanFire:%d"),
+    //            FVector::Dist(mOwnerPawn->GetActorLocation(), CurrentTarget->GetActorLocation()),
+    //            State[TTTowerGOAPKeys::HasLineOfSight],
+    //            State[TTTowerGOAPKeys::TurretAligned],
+    //            State[TTTowerGOAPKeys::CanFire]
+    //        )
+    //    );
+    //}
 
     return State;
 }
@@ -229,17 +229,17 @@ bool UTT_TowerAIComponent::HasLineOfSightToTarget() const
     constexpr float GuaranteedCloseRangeLOS = 1300.f;
     const float TowerToTargetDistSq = FVector::DistSquared(TowerLocation, TargetLocation);
 
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(
-            -1,
-            0.f,
-            FColor::Green,
-            FString::Printf(TEXT("%s TowerToTargetDist: %.1f"),
-                *GetOwner()->GetName(),
-                FVector::Dist(TowerLocation, TargetLocation))
-        );
-    }
+    //if (GEngine)
+    //{
+    //    GEngine->AddOnScreenDebugMessage(
+    //        -1,
+    //        0.f,
+    //        FColor::Green,
+    //        FString::Printf(TEXT("%s TowerToTargetDist: %.1f"),
+    //            *GetOwner()->GetName(),
+    //            FVector::Dist(TowerLocation, TargetLocation))
+    //    );
+    //}
 
     if (TowerToTargetDistSq <= FMath::Square(GuaranteedCloseRangeLOS))
     {
@@ -294,16 +294,16 @@ bool UTT_TowerAIComponent::HasLineOfSightToTarget() const
         // If we ignored the target and still hit something, that thing blocks LOS.
         const bool bThisPathHasLOS = !bHitSomething;
 
-        DrawDebugLine(
-            GetWorld(),
-            Start,
-            End,
-            bThisPathHasLOS ? FColor::Green : FColor::Red,
-            false,
-            0.05f,
-            0,
-            2.f
-        );
+        //DrawDebugLine(
+        //    GetWorld(),
+        //    Start,
+        //    End,
+        //    bThisPathHasLOS ? FColor::Green : FColor::Red,
+        //    false,
+        //    0.05f,
+        //    0,
+        //    2.f
+        //);
 
         if (bThisPathHasLOS)
         {

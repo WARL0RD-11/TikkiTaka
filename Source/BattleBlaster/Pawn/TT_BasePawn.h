@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "NiagaraFunctionLibrary.h"
 #include "TT_BasePawn.generated.h"
 
 class UCapsuleComponent;
@@ -37,6 +38,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Pawn")
 	TObjectPtr<UTT_HealthComponent> HealthComponent;	
+
+	UPROPERTY(EditAnywhere, Category = "Pawn")
+	TObjectPtr<UNiagaraSystem> DeathParticles;
+
+
+	UPROPERTY(EditAnywhere, Category = "Missile|CameraShake")
+	TSubclassOf<UCameraShakeBase> DeathCameraShakeClass;
 
 	UFUNCTION()
 	virtual void HandleDestruction();	

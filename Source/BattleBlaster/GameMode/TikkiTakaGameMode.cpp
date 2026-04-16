@@ -5,15 +5,55 @@
 #include "Kismet/GameplayStatics.h"
 #include "BattleBlaster/Pawn/Tank/TT_TankPawn.h"
 #include "BattleBlaster/Pawn/Tower/TT_TowerPawn.h"
+#include "BattleBlaster/Controllers/TT_PlayerController.h"
+#include "BattleBlaster/GI/TT_GameInstance.h"
+#include "BattleBlaster/UI/TT_UI_ScreenMsg.h"
+
+
 
 void ATikkiTakaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	PlayerTank = Cast<ATT_TankPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	PC = Cast<ATT_PlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+
+	Countdown = LevelStartDelay;
+	GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &ATikkiTakaGameMode::CountdownTimerTick, 1.0f, true);	
+
+
+	if (ScreenMsgWidgetClass)
+	{
+		ScreenMsgWidget = CreateWidget<UTT_UI_ScreenMsg>(PC, ScreenMsgWidgetClass);
+		ScreenMsgWidget->AddToViewport();
+	}
+}
+
+void ATikkiTakaGameMode::CountdownTimerTick()
+{
+	if (Countdown <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(CountdownTimerHandle);
+		PC->SetPlayerInputDisabled(false);
+		if (ScreenMsgWidget)
+		{
+			ScreenMsgWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+	else
+	{
+		Countdown--;
+
+		if (ScreenMsgWidget)
+		{
+			ScreenMsgWidget->SetScreenMsgText(FText::FromString(FString::Printf(TEXT("Game starts in: %d"), Countdown)));
+		}
+	}
 }
 
 void ATikkiTakaGameMode::ActorDied(AActor* DeadActor)
 {
+	bool bIsGameOver = false;	
+
 	if (!IsValid(DeadActor))
 	{
 		return;
@@ -21,29 +61,22 @@ void ATikkiTakaGameMode::ActorDied(AActor* DeadActor)
 
 	if (DeadActor == PlayerTank)
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Player Died"));
-		}
-
 		PlayerTank->HandleDestruction();
 
-		// TODO: Handle player lose condition here
-		DeadActor->Destroy();
-
-		//Restart Currrent Level after a short delay
-
-		FName CurrentLevel = *UGameplayStatics::GetCurrentLevelName(this);
-		UGameplayStatics::OpenLevel(this, CurrentLevel);
-
-		return;
+		if (PC)
+		{
+			PlayerTank->DisableInput(PC);
+			PC->SetPlayerInputDisabled(true);
+			PC->SetShowMouseCursor(false);
+		}
+		bIsGameOver = true;
+		bIsVictory = false;	
 	}
 
 	if (ATT_TowerPawn* Tower = Cast<ATT_TowerPawn>(DeadActor))
 	{
 		Tower->HandleDestruction();
 
-		// Destroy triggers EndPlay, which removes tower from ActiveTowers
 		DeadActor->Destroy();
 
 		const int32 RemainingTowers = GetActiveTowerCount();
@@ -60,18 +93,20 @@ void ATikkiTakaGameMode::ActorDied(AActor* DeadActor)
 
 		if (RemainingTowers == 0)
 		{
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("All Towers Destroyed! You Win!"));
-			}
-
-			// TODO: Handle win condition here
+			bIsGameOver = true;
+			bIsVictory = true;
 		}
 
-		return;
 	}
 
-	DeadActor->Destroy();
+	if (bIsGameOver)
+	{
+		ScreenMsgWidget->SetVisibility(ESlateVisibility::Visible);
+		GetWorldTimerManager().SetTimer(RestartTimerHandle, this, &ATikkiTakaGameMode::GameLevelTransition, RestartDelay, false);
+		bIsVictory ? ScreenMsgWidget->SetScreenMsgText(FText::FromString(TEXT("You Win!"))) : 
+			ScreenMsgWidget->SetScreenMsgText(FText::FromString(TEXT("You Died!")));
+	}
+
 }
 
 void ATikkiTakaGameMode::RegisterTower(ATT_TowerPawn* Tower)
@@ -93,3 +128,19 @@ int32 ATikkiTakaGameMode::GetActiveTowerCount() const
 	return ActiveTowers.Num();
 }
 
+void ATikkiTakaGameMode::GameLevelTransition()
+{
+	UTT_GameInstance* GI = Cast<UTT_GameInstance>(GetGameInstance());
+	if(!GI) return;	
+
+	if(bIsVictory)
+	{
+		GI->LoadNextLevel();	
+	}
+	else
+	{
+		GI->RestartCurrentLevel();
+
+	}
+
+}	

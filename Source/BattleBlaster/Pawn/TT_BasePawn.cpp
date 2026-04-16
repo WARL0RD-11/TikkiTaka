@@ -28,6 +28,15 @@ ATT_BasePawn::ATT_BasePawn()
 
 void ATT_BasePawn::HandleDestruction()
 {
+	if(DeathParticles)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DeathParticles, GetActorLocation(), GetActorRotation());
+	}
+
+	if(DeathCameraShakeClass)
+	{
+		GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(DeathCameraShakeClass);
+	}
 }
 
 void ATT_BasePawn::BeginPlay()

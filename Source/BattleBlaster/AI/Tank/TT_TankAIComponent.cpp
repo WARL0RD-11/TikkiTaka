@@ -14,6 +14,7 @@
 
 UTT_TankAIComponent::UTT_TankAIComponent()
 {
+	PrimaryComponentTick.bCanEverTick = true;
 }
 
 void UTT_TankAIComponent::BuildActions()

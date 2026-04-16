@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "NiagaraFunctionLibrary.h"
 #include "TT_Missile.generated.h"
 
 class UProjectileMovementComponent;
+class UNiagaraComponent;
 
 UCLASS()
 class BATTLEBLASTER_API ATT_Missile : public AActor
@@ -22,6 +24,17 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Missile|Movement")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovementComponent;
+
+
+	UPROPERTY(EditAnywhere, Category = "Missile|Movement")
+	TObjectPtr<UNiagaraComponent> TrailParticle;
+
+	UPROPERTY(EditAnywhere, Category = "Missile|Movement")
+	TObjectPtr<UNiagaraSystem> HitParticles;
+
+	UPROPERTY(EditAnywhere, Category = "Missile|CameraShake")	
+	TSubclassOf<UCameraShakeBase> HitCameraShakeClass;
+
 
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 

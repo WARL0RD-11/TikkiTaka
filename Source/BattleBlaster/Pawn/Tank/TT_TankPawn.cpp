@@ -4,6 +4,7 @@
 #include "TT_TankPawn.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "BattleBlaster/Components/TT_HealthComponent.h"	
 
 ATT_TankPawn::ATT_TankPawn()
 {
@@ -21,6 +22,11 @@ ATT_TankPawn::ATT_TankPawn()
 void ATT_TankPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(HealthComponent->GetHealth() > 0)
+	{
+		bIsDead = false;
+	}	
 }
 
 
@@ -32,5 +38,9 @@ void ATT_TankPawn::Tick(float DeltaTime)
 void ATT_TankPawn::HandleDestruction()
 {
 	Super::HandleDestruction();
+	bIsDead = true;
+	SetActorHiddenInGame(true);	
+	SetActorTickEnabled(false);
+	SetActorEnableCollision(false);
 }
 

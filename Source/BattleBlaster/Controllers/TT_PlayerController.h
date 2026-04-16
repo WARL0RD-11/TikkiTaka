@@ -31,6 +31,10 @@ class BATTLEBLASTER_API ATT_PlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+	void SetPlayerInputDisabled(bool bDisabled);
+	bool IsPlayerInputDisabled() const { return bInputDisabled; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -52,6 +56,9 @@ protected:
 	TObjectPtr<UInputAction> FireAction;
 
 	ATT_TankPawn* PlayerPawnTank;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bInputDisabled = false;
 
 private:
 	TMap<EInputAction, TSharedPtr<ICommand>> CommandMap;

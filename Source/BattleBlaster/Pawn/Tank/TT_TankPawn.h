@@ -24,6 +24,9 @@ public:
 
 	virtual void HandleDestruction() override;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsDead = false;
+
 protected:
 	virtual void BeginPlay() override;
 

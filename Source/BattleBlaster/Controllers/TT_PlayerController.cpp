@@ -26,6 +26,8 @@ void ATT_PlayerController::BeginPlay()
 	CommandMap.Add(EInputAction::Aim, MakeShared<TT_AimCommand>());	
 	CommandMap.Add(EInputAction::Fire, MakeShared<TT_FireCommand>());	
 
+	bInputDisabled = true;
+
 	auto* USubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 
 	USubsystem->AddMappingContext(MappingContext, 0);
@@ -45,6 +47,12 @@ void ATT_PlayerController::BeginPlay()
 void ATT_PlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	
+	if (bInputDisabled)
+	{
+		return;
+	}
+
 	UpdateAimUnderCursor();
 
 	//Print Command Map for debugging
@@ -81,6 +89,10 @@ void ATT_PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ATT_PlayerController::HandleMove(const FInputActionValue& ActionValue)
 {
+	if (bInputDisabled)
+	{
+		return;
+	}
 
 	if(PlayerPawnTank && CommandMap.Contains(EInputAction::Move))
 	{
@@ -90,6 +102,11 @@ void ATT_PlayerController::HandleMove(const FInputActionValue& ActionValue)
 
 void ATT_PlayerController::HandleAim(const FInputActionValue& ActionValue)
 {
+	if (bInputDisabled)
+	{
+		return;
+	}
+
 	FHitResult HitResult;
 	GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
 	if (PlayerPawnTank && CommandMap.Contains(EInputAction::Aim))
@@ -100,6 +117,11 @@ void ATT_PlayerController::HandleAim(const FInputActionValue& ActionValue)
 
 void ATT_PlayerController::HandleFire(const FInputActionValue& ActionValue)
 {
+	if (bInputDisabled)
+	{
+		return;
+	}
+
 	FHitResult HitResult;
 	GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
 
@@ -134,4 +156,9 @@ void ATT_PlayerController::UpdateAimUnderCursor()
 			AimSpeed
 		);
 	}
+}
+
+void ATT_PlayerController::SetPlayerInputDisabled(bool bDisabled)
+{
+	bInputDisabled = bDisabled;
 }

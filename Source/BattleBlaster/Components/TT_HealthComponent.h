@@ -32,6 +32,8 @@ public:
 	UFUNCTION()
 	float GetHealthPercent() const;
 
+	float GetHealth() const { return CurrentHealth; }	
+
 protected:
 	virtual void BeginPlay() override;
 

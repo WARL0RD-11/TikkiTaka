@@ -4,6 +4,8 @@
 #include "TT_Missile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"	
+#include "BattleBlaster/Controllers/TT_PlayerController.h"
 
 ATT_Missile::ATT_Missile()
 {
@@ -23,6 +25,9 @@ ATT_Missile::ATT_Missile()
 	ProjectileMovementComponent->bShouldBounce = false;
 
 	InitialLifeSpan = 5.f;
+
+	TrailParticle = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TrailParticle"));
+	TrailParticle->SetupAttachment(RootComponent);
 
 }
 
@@ -49,7 +54,19 @@ void ATT_Missile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 
 	UGameplayStatics::ApplyDamage(OtherActor, Damage, mOwner->GetInstigatorController(), this, nullptr);
 
-	//Sound
+	if (HitParticles)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, HitParticles, GetActorLocation(), GetActorRotation());
+	}
+
+	if(HitCameraShakeClass)
+	{
+		ATT_PlayerController* PC = Cast<ATT_PlayerController>(UGameplayStatics::GetPlayerController(this, 0));	
+		if (PC)
+		{
+			PC->ClientStartCameraShake(HitCameraShakeClass);
+		}
+	}	
 
 	Destroy();
 }

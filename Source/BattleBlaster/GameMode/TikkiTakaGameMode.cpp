@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "BattleBlaster/Pawn/Tank/TT_TankPawn.h"
 #include "BattleBlaster/Pawn/Tower/TT_TowerPawn.h"
+#include "BattleBlaster/Pawn/Tank/TT_EnemyTank.h" 
 #include "BattleBlaster/Controllers/TT_PlayerController.h"
 #include "BattleBlaster/GI/TT_GameInstance.h"
 #include "BattleBlaster/UI/TT_UI_ScreenMsg.h"
@@ -52,8 +53,6 @@ void ATikkiTakaGameMode::CountdownTimerTick()
 
 void ATikkiTakaGameMode::ActorDied(AActor* DeadActor)
 {
-	bool bIsGameOver = false;	
-
 	if (!IsValid(DeadActor))
 	{
 		return;
@@ -73,32 +72,21 @@ void ATikkiTakaGameMode::ActorDied(AActor* DeadActor)
 		bIsVictory = false;	
 	}
 
+	if (ATT_EnemyTank* EnemyTank = Cast<ATT_EnemyTank>(DeadActor))
+	{
+		EnemyTank->HandleDestruction();
+		DeadActor->Destroy();
+	}
+
 	if (ATT_TowerPawn* Tower = Cast<ATT_TowerPawn>(DeadActor))
 	{
 		Tower->HandleDestruction();
 
 		DeadActor->Destroy();
-
-		const int32 RemainingTowers = GetActiveTowerCount();
-
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				5.f,
-				FColor::Green,
-				FString::Printf(TEXT("Tower Destroyed. Remaining Towers: %d"), RemainingTowers)
-			);
-		}
-
-		if (RemainingTowers == 0)
-		{
-			bIsGameOver = true;
-			bIsVictory = true;
-		}
-
 	}
-
+	
+	CheckGameOver();
+	
 	if (bIsGameOver)
 	{
 		ScreenMsgWidget->SetVisibility(ESlateVisibility::Visible);
@@ -128,6 +116,25 @@ int32 ATikkiTakaGameMode::GetActiveTowerCount() const
 	return ActiveTowers.Num();
 }
 
+void ATikkiTakaGameMode::RegisterEnemyTank(ATT_EnemyTank* EnemyTank)
+{
+	if (!IsValid(EnemyTank)) return;
+
+	ActiveEnemyTanks.Add(EnemyTank);
+}
+
+void ATikkiTakaGameMode::UnregisterEnemyTank(ATT_EnemyTank* EnemyTank)
+{
+	if (!IsValid(EnemyTank)) return;
+
+	ActiveEnemyTanks.Remove(EnemyTank);
+}
+
+int32 ATikkiTakaGameMode::GetActiveEnemyTankCount() const
+{
+	return ActiveEnemyTanks.Num();
+}
+
 void ATikkiTakaGameMode::GameLevelTransition()
 {
 	UTT_GameInstance* GI = Cast<UTT_GameInstance>(GetGameInstance());
@@ -143,4 +150,15 @@ void ATikkiTakaGameMode::GameLevelTransition()
 
 	}
 
-}	
+}
+void ATikkiTakaGameMode::CheckGameOver()
+{
+	const int32 RemainingTowers = GetActiveTowerCount();
+	const int32 RemainingEnemyTanks = GetActiveEnemyTankCount();
+
+	if (RemainingTowers == 0 && RemainingEnemyTanks == 0)
+	{
+		bIsGameOver = true;
+		bIsVictory = true;
+	}
+}

@@ -10,7 +10,9 @@ void ATT_TowerPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ATikkiTakaGameMode* GM = Cast<ATikkiTakaGameMode>(GetWorld()->GetAuthGameMode()))
+	GM = Cast<ATikkiTakaGameMode>(GetWorld()->GetAuthGameMode());
+
+	if (GM)
 	{
 		GM->RegisterTower(this);
 		bRegisteredWithGameMode = true;
@@ -21,7 +23,7 @@ void ATT_TowerPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (bRegisteredWithGameMode)
 	{
-		if (ATikkiTakaGameMode* GM = Cast<ATikkiTakaGameMode>(GetWorld()->GetAuthGameMode()))
+		if (GM)
 		{
 			GM->UnregisterTower(this);
 		}

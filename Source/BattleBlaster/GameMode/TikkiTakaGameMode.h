@@ -11,6 +11,7 @@
  */
 class ATT_TankPawn;
 class ATT_TowerPawn;
+class ATT_EnemyTank;	
 
 UCLASS()
 class BATTLEBLASTER_API ATikkiTakaGameMode : public AGameModeBase
@@ -30,6 +31,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Towers")
 	int32 GetActiveTowerCount() const;	
 
+
+	UFUNCTION(BlueprintCallable, Category = "EnemyAI")
+	void RegisterEnemyTank(ATT_EnemyTank* EnemyTank);
+
+	UFUNCTION(BlueprintCallable, Category = "EnemyAI")
+	void UnregisterEnemyTank(ATT_EnemyTank* EnemyTank);		
+
+	UFUNCTION(BlueprintPure, Category = "EnemyAI")
+	int32 GetActiveEnemyTankCount() const;
+
 	FTimerHandle CountdownTimerHandle;
 
 	UFUNCTION()
@@ -41,11 +52,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Towers")
 	int32 ActiveTowerCount = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EnemyAI")
+	int32 ActiveEnemyTankCount = 0;
+
 	UPROPERTY()
 	TObjectPtr<ATT_TankPawn> PlayerTank = nullptr;
 
 	UPROPERTY()
 	TSet<TObjectPtr<ATT_TowerPawn>> ActiveTowers;
+
+	UPROPERTY()
+	TSet<TObjectPtr<ATT_EnemyTank>> ActiveEnemyTanks;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Restart Delay")
 	float RestartDelay = 3.f;	
@@ -57,6 +74,9 @@ protected:
 
 	UPROPERTY()
 	bool bIsVictory = false;
+
+	UPROPERTY()
+	bool bIsGameOver = false;
 
 	UPROPERTY(EditAnywhere)
 	int32 LevelStartDelay = 3.f;
@@ -72,5 +92,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UTT_UI_ScreenMsg> ScreenMsgWidget;	
+
+	void CheckGameOver();	
 	
 };

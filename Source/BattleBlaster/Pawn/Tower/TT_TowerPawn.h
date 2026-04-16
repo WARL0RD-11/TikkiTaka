@@ -29,5 +29,7 @@ protected:
 private:
 	bool bRegisteredWithGameMode = false;
 
+	class ATikkiTakaGameMode* GM = nullptr;
+
 	
 };

@@ -19,12 +19,9 @@ class BATTLEBLASTER_API ATT_EnemyTank : public ATT_BasePawn
 	
 public:
 	ATT_EnemyTank();
-
-protected:
-	virtual void BeginPlay() override;
-
-public:
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void HandleDestruction() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
@@ -35,5 +32,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float TurnSpeed = 2.5f;
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	bool bRegisteredWithGameMode = false;
+
+	class ATikkiTakaGameMode* GM = nullptr;
 
 };

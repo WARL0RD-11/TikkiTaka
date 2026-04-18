@@ -5,6 +5,7 @@
 #include "BattleBlaster/AI/GOAP/TT_GOAPBrainComponent.h"
 #include "BattleBlaster/AI/GOAP/TT_GOAPAction.h"
 #include "BattleBlaster/AI/GOAP/TT_GOAPPlanner.h"
+#include "BattleBlaster/LevelEditor/Data/TT_CustomLevelTypes.h"
 #include "TT_TowerAIComponent.generated.h"
 
 class ATT_BasePawn;
@@ -41,6 +42,9 @@ public:
     bool CanFire() const;
     void AimAtTarget();
     bool FireAtTarget();
+
+    UFUNCTION(BlueprintCallable, Category = "CustomLevel")
+    void ApplyCustomTuning(const FTT_TowerTuning& Tuning);
 
 protected:
     FVector GetAimPoint() const;

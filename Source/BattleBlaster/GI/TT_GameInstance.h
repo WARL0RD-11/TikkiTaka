@@ -9,6 +9,14 @@
 /**
  * 
  */
+UENUM(BlueprintType)
+enum class ETT_PlayFlowMode : uint8
+{
+	Campaign,
+	CustomPreview,
+	CampaignThenCustom
+};
+
 UCLASS()
 class BATTLEBLASTER_API UTT_GameInstance : public UGameInstance
 {
@@ -25,6 +33,24 @@ public:
 	void LoadNextLevel();
 	void RestartCurrentLevel();
 	void RestartGame();
+
+	UPROPERTY(BlueprintReadWrite, Category = "CustomLevel")
+	ETT_PlayFlowMode PlayFlowMode = ETT_PlayFlowMode::Campaign;
+
+	UPROPERTY(BlueprintReadWrite, Category = "CustomLevel")
+	bool bHasSavedCustomLevel = false;
+
+	UPROPERTY(BlueprintReadWrite, Category = "CustomLevel")
+	bool bCustomLevelAddedToProgression = false;
+
+	UFUNCTION(BlueprintCallable)
+	void OpenLevelEditor();
+
+	UFUNCTION(BlueprintCallable)
+	void PlayCustomLevelNow();
+
+	UFUNCTION(BlueprintCallable)
+	void SetCustomLevelAddedToProgression(bool bEnabled);
 
 private:
 	void ChangeLevelIndex(int32 Index);	

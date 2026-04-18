@@ -4,6 +4,7 @@
 #include "BattleBlaster/AI/GOAP/TT_GOAPBrainComponent.h"
 #include "BattleBlaster/AI/GOAP/TT_GOAPAction.h"
 #include "BattleBlaster/AI/GOAP/TT_GOAPPlanner.h"
+#include "BattleBlaster/LevelEditor/Data/TT_CustomLevelTypes.h"
 #include "TT_TankAIComponent.generated.h"
 
 class APawn;
@@ -148,6 +149,13 @@ public:
 
 	FVector GetAimPoint() const;
 	ATT_EnemyTank* GetTankOwner() const;
+
+
+	UFUNCTION(BlueprintCallable, Category = "CustomLevel")
+	void ApplyCustomTuning(const FTT_TankTuning& Tuning);
+
+	UFUNCTION(BlueprintCallable, Category = "CustomLevel")
+	void SetPatrolPoints(const TArray<AActor*>& InPatrolPoints);
 };
 
 UCLASS()

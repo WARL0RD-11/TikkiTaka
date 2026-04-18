@@ -1,3 +1,6 @@
+
+//TT_TankAIComponent
+
 #include "TT_TankAIComponent.h"
 
 #include "BattleBlaster/Commands/Move/TT_MoveCommand.h"
@@ -532,6 +535,31 @@ FVector UTT_TankAIComponent::GetAimPoint() const
 ATT_EnemyTank* UTT_TankAIComponent::GetTankOwner() const
 {
 	return Cast<ATT_EnemyTank>(OwnerPawn);
+}
+
+void UTT_TankAIComponent::ApplyCustomTuning(const FTT_TankTuning& Tuning)
+{
+	ScanRange = Tuning.ScanRange;
+	AttackRange = Tuning.AttackRange;
+	FireCooldown = Tuning.FireCooldown;
+	AimSpeed = Tuning.AimSpeed;
+	FireAngleTolerance = Tuning.FireAngleTolerance;
+	LowHealthThreshold = Tuning.LowHealthThreshold;
+	RecoverHealthThreshold = Tuning.RecoverHealthThreshold;
+	PatrolPointAcceptanceRadius = Tuning.PatrolPointAcceptanceRadius;
+}
+
+void UTT_TankAIComponent::SetPatrolPoints(const TArray<AActor*>& InPatrolPoints)
+{
+	PatrolPoints.Empty();
+
+	for (AActor* Actor : InPatrolPoints)
+	{
+		if (IsValid(Actor))
+		{
+			PatrolPoints.Add(Actor);
+		}
+	}
 }
 
 FString UTT_TankAIComponent::GetCurrentGoalString() const

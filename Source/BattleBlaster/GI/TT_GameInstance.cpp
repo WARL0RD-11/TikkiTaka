@@ -1,8 +1,25 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Game Instance
 
 
 #include "TT_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+
+void UTT_GameInstance::OpenLevelEditor()
+{
+	UGameplayStatics::OpenLevel(this, TEXT("L_LevelEditor"));
+}
+
+void UTT_GameInstance::PlayCustomLevelNow()
+{
+	UGameplayStatics::OpenLevel(this, TEXT("L_CustomRuntime"));
+}
+
+void UTT_GameInstance::SetCustomLevelAddedToProgression(bool bEnabled)
+{
+	bHasSavedCustomLevel = true;
+	bCustomLevelAddedToProgression = bEnabled;
+	PlayFlowMode = bEnabled ? ETT_PlayFlowMode::CampaignThenCustom : ETT_PlayFlowMode::Campaign;
+}
 
 void UTT_GameInstance::ChangeLevelIndex(int32 Index)
 {
@@ -21,18 +38,37 @@ void UTT_GameInstance::ChangeLevelIndex(int32 Index)
 
 void UTT_GameInstance::LoadNextLevel()
 {
+	if (PlayFlowMode == ETT_PlayFlowMode::CustomPreview)
+	{
+		RestartGame();
+		return;
+	}
+
 	if (CurrentLevelIndex < LastLevelIndex)
 	{
 		ChangeLevelIndex(CurrentLevelIndex + 1);
+		return;
 	}
-	else
+
+	if (PlayFlowMode == ETT_PlayFlowMode::CampaignThenCustom &&
+		bHasSavedCustomLevel &&
+		bCustomLevelAddedToProgression)
 	{
-		RestartGame();
+		UGameplayStatics::OpenLevel(this, TEXT("L_CustomRuntime"));
+		return;
 	}
+
+	RestartGame();
 }
 
 void UTT_GameInstance::RestartCurrentLevel()
 {
+	if (PlayFlowMode == ETT_PlayFlowMode::CustomPreview)
+	{
+		UGameplayStatics::OpenLevel(this, TEXT("L_CustomRuntime"));
+		return;
+	}
+
 	ChangeLevelIndex(CurrentLevelIndex);
 }
 

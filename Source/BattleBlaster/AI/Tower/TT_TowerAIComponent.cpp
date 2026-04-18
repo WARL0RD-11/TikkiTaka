@@ -407,6 +407,15 @@ bool UTT_TowerAIComponent::FireAtTarget()
     return true;
 }
 
+void UTT_TowerAIComponent::ApplyCustomTuning(const FTT_TowerTuning& Tuning)
+{
+    ScanRange = Tuning.ScanRange;
+    FireRange = Tuning.FireRange;
+    FireCooldown = Tuning.FireCooldown;
+    AimSpeed = Tuning.AimSpeed;
+    AimToleranceDegrees = Tuning.AimToleranceDegrees;
+}
+
 FVector UTT_TowerAIComponent::GetAimPoint() const
 {
     if (!CurrentTarget)

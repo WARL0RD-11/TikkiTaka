@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Game MOde
 
 
 #include "TikkiTakaGameMode.h"

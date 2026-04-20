@@ -115,6 +115,12 @@ public:
 	void PlayNow();
 
 	UFUNCTION(BlueprintCallable, Category = "Editor")
+	void ClearCurrentLevel();
+
+	UFUNCTION(BlueprintCallable, Category = "Editor")
+	bool DeleteCurrentLevel();
+
+	UFUNCTION(BlueprintCallable, Category = "Editor")
 	bool IsGhostPlacementValid() const { return bGhostPlacementValid; }
 
 	UFUNCTION(BlueprintCallable, Category = "Editor")
@@ -135,6 +141,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Editor")
 	FString GetSelectedTypeAsString() const;
 
+	bool BeginPatrolLinkForSelectedTank();
+	void ClearPatrolLinkTarget();
+	bool LinkPatrolPointToTank(FName TankInstanceId, FName PatrolPointId);
+	bool UnlinkPatrolPointFromTank(FName TankInstanceId, FName PatrolPointId);
+
+	UFUNCTION(BlueprintPure, Category = "Level Editor|Patrol Linking")
+	bool HasPatrolLinkTarget() const { return !PatrolLinkTankInstanceId.IsNone(); }
+
+	UFUNCTION(BlueprintPure, Category = "Level Editor|Patrol Linking")
+	FName GetPatrolLinkTankInstanceId() const { return PatrolLinkTankInstanceId; }
+
 protected:
 	UPROPERTY()
 	TMap<FName, AActor*> PreviewActorMap;
@@ -150,6 +167,10 @@ protected:
 
 	UPROPERTY()
 	FTransform GhostTransform = FTransform::Identity;
+
+	protected:
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Level Editor|Patrol Linking")
+		FName PatrolLinkTankInstanceId = NAME_None;
 
 protected:
 	void CreateEditorWidget();

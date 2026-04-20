@@ -30,8 +30,6 @@ void UTT_HealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 void UTT_HealthComponent::OnDamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	AController* EventInstigator, AActor* DamageCauser)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Damage Taken: %f"), Damage));
-
 	//Apply damage
 	if (Damage <= 0.f) return;
 

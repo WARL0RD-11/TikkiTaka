@@ -9,27 +9,42 @@ TT_MoveCommand::TT_MoveCommand()
 {
 }
 
-void TT_MoveCommand::Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const float& InSpeedModifier, 
-	const float& InTurnModifier)
+void TT_MoveCommand::ExecuteForward(ATT_BasePawn* InPawn, float InputValue, float DeltaTime, float MoveSpeed)
 {
+	if (!InPawn || FMath::IsNearlyZero(InputValue))
+	{
+		return;
+	}
 
-	FVector MoveValue = InValue.Get<FVector>();
+	const float ClampedInput = FMath::Clamp(InputValue, -1.f, 1.f);
 
-	if (!InPawn || MoveValue.IsZero()) return;
-
-	FVector NormalizedMoveValue = MoveValue.GetSafeNormal();	
-
-	const float DeltaSeconds = InPawn->GetWorld() ? InPawn->GetWorld()->GetDeltaSeconds() : 0.f;
-
-	FVector LocalDelta(
-		NormalizedMoveValue.Y * InSpeedModifier * DeltaSeconds,
+	const FVector LocalDelta(
+		ClampedInput * MoveSpeed * DeltaTime,
 		0.f,
 		0.f
 	);
 
 	InPawn->AddActorLocalOffset(LocalDelta, true);
+}
 
-	InPawn->AddActorLocalRotation(FRotator(0.f, NormalizedMoveValue.X * InTurnModifier * DeltaSeconds, 0.f));
+void TT_MoveCommand::ExecuteTurn(ATT_BasePawn* InPawn, float InputValue, float DeltaTime, float TurnSpeed)
+{
+	if (!InPawn || FMath::IsNearlyZero(InputValue))
+	{
+		return;
+	}
+
+	const float ClampedInput = FMath::Clamp(InputValue, -1.f, 1.f);
+
+	InPawn->AddActorLocalRotation(
+		FRotator(0.f, ClampedInput * TurnSpeed * DeltaTime, 0.f)
+	);
+}
+
+void TT_MoveCommand::Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const float& InSpeedModifier, 
+	const float& InTurnModifier)
+{
+
 }
 
 void TT_MoveCommand::Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const FVector& InDirection, 

@@ -52,6 +52,150 @@ void UTT_UI_LevelEditorDetails::RefreshFromEditorState()
 	}
 
 	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	const FName CurrentSelectionId = Record ? Record->InstanceId : NAME_None;
+
+	// Do not rewrite editable text if the same actor is still selected.
+	if (CurrentSelectionId == LastRefreshedSelectionId)
+	{
+		return;
+	}
+
+	ForceRefreshFromEditorState();
+}
+
+void UTT_UI_LevelEditorDetails::ApplyTransformFromUI()
+{
+	if (!EditorManager)
+	{
+		return;
+	}
+
+	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	if (!Record)
+	{
+		return;
+	}
+
+	const FVector NewLocation(
+		ReadFloat(PosXText, Record->Transform.GetLocation().X),
+		ReadFloat(PosYText, Record->Transform.GetLocation().Y),
+		ReadFloat(PosZText, Record->Transform.GetLocation().Z));
+
+	const FRotator NewRotation(
+		0.f,
+		ReadFloat(YawText, Record->Transform.Rotator().Yaw),
+		0.f);
+
+	FTransform NewTransform(NewRotation, NewLocation, Record->Transform.GetScale3D());
+	EditorManager->UpdateSelectedTransform(NewTransform);
+
+	ForceRefreshFromEditorState();
+}
+
+void UTT_UI_LevelEditorDetails::ApplyTowerTuningFromUI()
+{
+	if (!EditorManager)
+	{
+		return;
+	}
+
+	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTower)
+	{
+		return;
+	}
+
+	FTT_TowerTuning NewTuning = Record->TowerTuning;
+	NewTuning.ScanRange = ReadFloat(TowerScanRangeText, NewTuning.ScanRange);
+	NewTuning.FireRange = ReadFloat(TowerFireRangeText, NewTuning.FireRange);
+	NewTuning.FireCooldown = ReadFloat(TowerFireCooldownText, NewTuning.FireCooldown);
+	NewTuning.AimSpeed = ReadFloat(TowerAimSpeedText, NewTuning.AimSpeed);
+	NewTuning.AimToleranceDegrees = ReadFloat(TowerAimToleranceText, NewTuning.AimToleranceDegrees);
+
+	EditorManager->UpdateSelectedTowerTuning(NewTuning);
+
+	ForceRefreshFromEditorState();
+}
+
+void UTT_UI_LevelEditorDetails::ApplyTankTuningFromUI()
+{
+	if (!EditorManager)
+	{
+		return;
+	}
+
+	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
+	{
+		return;
+	}
+
+	FTT_TankTuning NewTuning = Record->TankTuning;
+	NewTuning.ScanRange = ReadFloat(TankScanRangeText, NewTuning.ScanRange);
+	NewTuning.AttackRange = ReadFloat(TankAttackRangeText, NewTuning.AttackRange);
+	NewTuning.FireCooldown = ReadFloat(TankFireCooldownText, NewTuning.FireCooldown);
+	NewTuning.AimSpeed = ReadFloat(TankAimSpeedText, NewTuning.AimSpeed);
+	NewTuning.FireAngleTolerance = ReadFloat(TankFireToleranceText, NewTuning.FireAngleTolerance);
+	NewTuning.LowHealthThreshold = ReadFloat(TankLowHealthText, NewTuning.LowHealthThreshold);
+	NewTuning.RecoverHealthThreshold = ReadFloat(TankRecoverHealthText, NewTuning.RecoverHealthThreshold);
+	NewTuning.PatrolPointAcceptanceRadius = ReadFloat(TankPatrolAcceptanceText, NewTuning.PatrolPointAcceptanceRadius);
+
+	EditorManager->UpdateSelectedTankTuning(NewTuning);
+
+	ForceRefreshFromEditorState();
+}
+
+void UTT_UI_LevelEditorDetails::ToggleSelectedTankPatrolPoint(FName PatrolPointId, bool bShouldLink)
+{
+	if (!EditorManager)
+	{
+		return;
+	}
+
+	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ToggleSelectedTankPatrolPoint failed: selected actor is not an enemy tank."));
+		return;
+	}
+
+	const bool bResult = bShouldLink
+		? EditorManager->LinkSelectedTankToPatrolPoint(PatrolPointId)
+		: EditorManager->UnlinkSelectedTankFromPatrolPoint(PatrolPointId);
+
+	UE_LOG(LogTemp, Warning, TEXT("Toggle patrol point %s for tank %s -> %s"),
+		*PatrolPointId.ToString(),
+		*Record->InstanceId.ToString(),
+		bResult ? TEXT("SUCCESS") : TEXT("FAILED"));
+}
+
+bool UTT_UI_LevelEditorDetails::IsPatrolPointLinkedForSelectedTank(FName PatrolPointId) const
+{
+	if (!EditorManager)
+	{
+		return false;
+	}
+
+	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
+	{
+		return false;
+	}
+
+	return Record->LinkedPatrolPointIds.Contains(PatrolPointId);
+}
+
+void UTT_UI_LevelEditorDetails::ForceRefreshFromEditorState()
+{
+	if (!EditorManager)
+	{
+		return;
+	}
+
+	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
+	const FName CurrentSelectionId = Record ? Record->InstanceId : NAME_None;
+	LastRefreshedSelectionId = CurrentSelectionId;
+
 	if (!Record)
 	{
 		if (SelectedActorText)
@@ -98,111 +242,34 @@ void UTT_UI_LevelEditorDetails::RefreshFromEditorState()
 	}
 }
 
-void UTT_UI_LevelEditorDetails::ApplyTransformFromUI()
+TArray<FTT_CustomPlacedActor> UTT_UI_LevelEditorDetails::GetAvailablePatrolPointRecords() const
 {
 	if (!EditorManager)
 	{
-		return;
+		return TArray<FTT_CustomPlacedActor>();
+	}
+
+	return EditorManager->GetPatrolPointRecords();
+}
+
+FName UTT_UI_LevelEditorDetails::GetSelectedInstanceId() const
+{
+	if (!EditorManager)
+	{
+		return NAME_None;
 	}
 
 	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
-	if (!Record)
-	{
-		return;
-	}
-
-	const FVector NewLocation(
-		ReadFloat(PosXText, Record->Transform.GetLocation().X),
-		ReadFloat(PosYText, Record->Transform.GetLocation().Y),
-		ReadFloat(PosZText, Record->Transform.GetLocation().Z));
-
-	const FRotator NewRotation(
-		0.f,
-		ReadFloat(YawText, Record->Transform.Rotator().Yaw),
-		0.f);
-
-	FTransform NewTransform(NewRotation, NewLocation, Record->Transform.GetScale3D());
-	EditorManager->UpdateSelectedTransform(NewTransform);
+	return Record ? Record->InstanceId : NAME_None;
 }
 
-void UTT_UI_LevelEditorDetails::ApplyTowerTuningFromUI()
+ETT_CustomPlaceableType UTT_UI_LevelEditorDetails::GetSelectedPlaceableType() const
 {
 	if (!EditorManager)
 	{
-		return;
+		return ETT_CustomPlaceableType::None;
 	}
 
 	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
-	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTower)
-	{
-		return;
-	}
-
-	FTT_TowerTuning NewTuning = Record->TowerTuning;
-	NewTuning.ScanRange = ReadFloat(TowerScanRangeText, NewTuning.ScanRange);
-	NewTuning.FireRange = ReadFloat(TowerFireRangeText, NewTuning.FireRange);
-	NewTuning.FireCooldown = ReadFloat(TowerFireCooldownText, NewTuning.FireCooldown);
-	NewTuning.AimSpeed = ReadFloat(TowerAimSpeedText, NewTuning.AimSpeed);
-	NewTuning.AimToleranceDegrees = ReadFloat(TowerAimToleranceText, NewTuning.AimToleranceDegrees);
-
-	EditorManager->UpdateSelectedTowerTuning(NewTuning);
-}
-
-void UTT_UI_LevelEditorDetails::ApplyTankTuningFromUI()
-{
-	if (!EditorManager)
-	{
-		return;
-	}
-
-	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
-	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
-	{
-		return;
-	}
-
-	FTT_TankTuning NewTuning = Record->TankTuning;
-	NewTuning.ScanRange = ReadFloat(TankScanRangeText, NewTuning.ScanRange);
-	NewTuning.AttackRange = ReadFloat(TankAttackRangeText, NewTuning.AttackRange);
-	NewTuning.FireCooldown = ReadFloat(TankFireCooldownText, NewTuning.FireCooldown);
-	NewTuning.AimSpeed = ReadFloat(TankAimSpeedText, NewTuning.AimSpeed);
-	NewTuning.FireAngleTolerance = ReadFloat(TankFireToleranceText, NewTuning.FireAngleTolerance);
-	NewTuning.LowHealthThreshold = ReadFloat(TankLowHealthText, NewTuning.LowHealthThreshold);
-	NewTuning.RecoverHealthThreshold = ReadFloat(TankRecoverHealthText, NewTuning.RecoverHealthThreshold);
-	NewTuning.PatrolPointAcceptanceRadius = ReadFloat(TankPatrolAcceptanceText, NewTuning.PatrolPointAcceptanceRadius);
-
-	EditorManager->UpdateSelectedTankTuning(NewTuning);
-}
-
-void UTT_UI_LevelEditorDetails::ToggleSelectedTankPatrolPoint(FName PatrolPointId, bool bShouldLink)
-{
-	if (!EditorManager)
-	{
-		return;
-	}
-
-	if (bShouldLink)
-	{
-		EditorManager->LinkSelectedTankToPatrolPoint(PatrolPointId);
-	}
-	else
-	{
-		EditorManager->UnlinkSelectedTankFromPatrolPoint(PatrolPointId);
-	}
-}
-
-bool UTT_UI_LevelEditorDetails::IsPatrolPointLinkedForSelectedTank(FName PatrolPointId) const
-{
-	if (!EditorManager)
-	{
-		return false;
-	}
-
-	const FTT_CustomPlacedActor* Record = EditorManager->GetSelectedRecord();
-	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
-	{
-		return false;
-	}
-
-	return Record->LinkedPatrolPointIds.Contains(PatrolPointId);
+	return Record ? Record->Type : ETT_CustomPlaceableType::None;
 }

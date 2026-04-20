@@ -13,6 +13,9 @@ class BATTLEBLASTER_API TT_MoveCommand : public ICommand
 public:
 	TT_MoveCommand();
 
+	void ExecuteForward(ATT_BasePawn* InPawn, float InputValue, float DeltaTime, float MoveSpeed);
+	void ExecuteTurn(ATT_BasePawn* InPawn, float InputValue, float DeltaTime, float TurnSpeed);
+
 	void Execute(ATT_BasePawn* InPawn, const FInputActionValue& InValue, const float& InSpeedModifier, 
 		const float& InTurnModifier) override;
 	

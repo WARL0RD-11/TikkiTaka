@@ -2,6 +2,7 @@
 
 #include "TT_LevelRuntimeSpawner.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerStart.h"
 #include "../Save/TT_CustomLevelSaveGame.h"
 #include "BattleBlaster/Pawn/Tank/TT_EnemyTank.h"
 #include "BattleBlaster/Pawn/Tower/TT_TowerPawn.h"
@@ -27,6 +28,12 @@ void ATT_LevelRuntimeSpawner::BeginPlay()
 
 void ATT_LevelRuntimeSpawner::BuildLevel()
 {
+	if (!GetWorld())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuildLevel failed: World is null."));
+		return;
+	}
+
 	if (!UGameplayStatics::DoesSaveGameExist(GCustomLevelSlotName, GCustomLevelSlotIndex))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No custom level save found."));
@@ -36,7 +43,11 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 	UTT_CustomLevelSaveGame* SaveObj = Cast<UTT_CustomLevelSaveGame>(
 		UGameplayStatics::LoadGameFromSlot(GCustomLevelSlotName, GCustomLevelSlotIndex));
 
-	if (!SaveObj) return;
+	if (!SaveObj)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuildLevel failed: Save object invalid."));
+		return;
+	}
 
 	const TArray<FTT_CustomPlacedActor>& Records = SaveObj->SavedLevel.PlacedActors;
 
@@ -46,7 +57,13 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	// Pass 1: walls, patrol points, towers, tanks, player
+	bool bFoundPlayerStart = false;
+	bool bSpawnedPlayerStartActor = false;
+	FTransform SavedPlayerStartTransform;
+
+	// =========================
+	// PASS 1: Spawn everything
+	// =========================
 	for (const FTT_CustomPlacedActor& Record : Records)
 	{
 		AActor* Spawned = nullptr;
@@ -64,6 +81,8 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 			if (PatrolPointClass)
 			{
 				Spawned = GetWorld()->SpawnActor<AActor>(PatrolPointClass, Record.Transform, Params);
+				UE_LOG(LogTemp, Warning, TEXT("Spawned PatrolPoint Record.InstanceId = %s"),
+					*Record.InstanceId.ToString());
 			}
 			break;
 
@@ -86,7 +105,9 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 		case ETT_CustomPlaceableType::EnemyTank:
 			if (EnemyTankClass)
 			{
-				ATT_EnemyTank* Tank = GetWorld()->SpawnActor<ATT_EnemyTank>(EnemyTankClass, Record.Transform, Params);
+				const FTransform AdjustedTransform = AddOffsetinZ(Record.Transform, ZOffset);
+
+				ATT_EnemyTank* Tank = GetWorld()->SpawnActor<ATT_EnemyTank>(EnemyTankClass, AdjustedTransform, Params);
 				Spawned = Tank;
 
 				if (Tank)
@@ -102,9 +123,20 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 			break;
 
 		case ETT_CustomPlaceableType::PlayerStart:
-			if (PlayerTankClass)
+			if (!bFoundPlayerStart)
 			{
-				Spawned = GetWorld()->SpawnActor<AActor>(PlayerTankClass, Record.Transform, Params);
+				SavedPlayerStartTransform = AddOffsetinZ(Record.Transform, ZOffset);
+				bFoundPlayerStart = true;
+
+				if (PlayerStartClass && !bSpawnedPlayerStartActor)
+				{
+					Spawned = GetWorld()->SpawnActor<AActor>(PlayerStartClass, SavedPlayerStartTransform, Params);
+					bSpawnedPlayerStartActor = (Spawned != nullptr);
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Multiple PlayerStart records found. Only the first one will be used."));
 			}
 			break;
 
@@ -118,13 +150,18 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 		}
 	}
 
-	// Pass 2: link patrol points to tanks
+	// ==================================
+	// PASS 2: Link patrol points to tanks
+	// ==================================
 	for (const TPair<ATT_EnemyTank*, FTT_CustomPlacedActor>& Pair : SpawnedTanks)
 	{
 		ATT_EnemyTank* Tank = Pair.Key;
 		const FTT_CustomPlacedActor& SourceRecord = Pair.Value;
 
-		if (!Tank) continue;
+		if (!Tank)
+		{
+			continue;
+		}
 
 		if (UTT_TankAIComponent* AI = Tank->FindComponentByClass<UTT_TankAIComponent>())
 		{
@@ -144,5 +181,35 @@ void ATT_LevelRuntimeSpawner::BuildLevel()
 			AI->SetPatrolPoints(PatrolActors);
 		}
 	}
+
+	// ==============================
+	// PASS 3: Move player to start
+	// ==============================
+	if (bFoundPlayerStart)
+	{
+		APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+		if (PlayerPawn)
+		{
+			PlayerPawn->SetActorLocationAndRotation(
+				SavedPlayerStartTransform.GetLocation(),
+				SavedPlayerStartTransform.Rotator(),
+				false,
+				nullptr,
+				ETeleportType::TeleportPhysics);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No PlayerPawn found to reposition."));
+		}
+	}
+}
+
+FTransform ATT_LevelRuntimeSpawner::AddOffsetinZ(const FTransform& InTransform, float ZVal) const
+{
+	FTransform OutTransform = InTransform;
+	FVector Location = OutTransform.GetLocation();
+	Location.Z += ZVal;
+	OutTransform.SetLocation(Location);
+	return OutTransform;
 }
 

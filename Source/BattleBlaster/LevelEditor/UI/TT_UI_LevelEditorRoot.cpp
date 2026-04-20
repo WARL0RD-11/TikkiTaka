@@ -20,6 +20,11 @@ void UTT_UI_LevelEditorRoot::NativeConstruct()
 		break;
 	}
 
+	if (DetailsPanel)
+	{
+		DetailsPanel->ForceRefreshFromEditorState();
+	}
+
 	RefreshStatusText();
 }
 
@@ -28,11 +33,6 @@ void UTT_UI_LevelEditorRoot::NativeTick(const FGeometry& MyGeometry, float InDel
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	RefreshStatusText();
-
-	if (DetailsPanel)
-	{
-		DetailsPanel->RefreshFromEditorState();
-	}
 }
 
 void UTT_UI_LevelEditorRoot::RefreshStatusText()
@@ -74,6 +74,16 @@ void UTT_UI_LevelEditorRoot::RefreshStatusText()
 		SelectedTypeText->SetText(FText::FromString(
 			FString::Printf(TEXT("Selected: %s"), *EditorManager->GetSelectedTypeAsString())));
 	}
+}
+
+void UTT_UI_LevelEditorRoot::OnClearLevel()
+{
+	if (EditorManager) EditorManager->ClearCurrentLevel();
+}
+
+void UTT_UI_LevelEditorRoot::OnDeleteLevel()
+{
+	if (EditorManager) EditorManager->DeleteCurrentLevel();
 }
 
 void UTT_UI_LevelEditorRoot::OnPlacePlayerStart()
@@ -128,6 +138,11 @@ void UTT_UI_LevelEditorRoot::OnLoadPressed()
 	if (EditorManager)
 	{
 		EditorManager->LoadLevel();
+
+		if (DetailsPanel)
+		{
+			DetailsPanel->ForceRefreshFromEditorState();
+		}
 	}
 }
 
@@ -167,5 +182,18 @@ void UTT_UI_LevelEditorRoot::OnClearSelection()
 	if (EditorManager)
 	{
 		EditorManager->ClearSelection();
+
+		if (DetailsPanel)
+		{
+			DetailsPanel->ForceRefreshFromEditorState();
+		}
+	}
+}
+
+void UTT_UI_LevelEditorRoot::RefreshDetailsPanel()
+{
+	if (DetailsPanel)
+	{
+		DetailsPanel->ForceRefreshFromEditorState();
 	}
 }

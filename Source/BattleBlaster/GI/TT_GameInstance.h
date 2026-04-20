@@ -12,9 +12,9 @@
 UENUM(BlueprintType)
 enum class ETT_PlayFlowMode : uint8
 {
-	Campaign,
-	CustomPreview,
-	CampaignThenCustom
+	Campaign				UMETA(DisplayName = "Campaign"),
+	CampaignThenCustom		UMETA(DisplayName = "Campaign Then Custom"),
+	CustomPreview			UMETA(DisplayName = "Custom Preview")
 };
 
 UCLASS()
@@ -23,6 +23,8 @@ class BATTLEBLASTER_API UTT_GameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public: 
+
+	virtual void Init() override;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	int32 LastLevelIndex = 3; //Maximum Levels in the game
 
@@ -51,6 +53,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetCustomLevelAddedToProgression(bool bEnabled);
+
+	UFUNCTION(BlueprintCallable)
+	void GoToEndScreen();
+
+	UFUNCTION()
+	void RefreshCustomLevelStateFromSave();
 
 private:
 	void ChangeLevelIndex(int32 Index);	

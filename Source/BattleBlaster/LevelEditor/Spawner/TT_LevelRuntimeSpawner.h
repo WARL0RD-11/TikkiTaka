@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,6 +8,7 @@
 class ATT_EnemyTank;
 class ATT_TowerPawn;
 class ATT_TankPawn;
+class APlayerStart;
 
 UCLASS()
 class BATTLEBLASTER_API ATT_LevelRuntimeSpawner : public AActor
@@ -32,9 +32,17 @@ public:
 	TSubclassOf<AActor> PatrolPointClass;
 
 	UPROPERTY(EditAnywhere, Category = "Runtime")
-	TSubclassOf<ATT_TankPawn> PlayerTankClass;
+	TSubclassOf<APlayerStart> PlayerStartClass;
+
+	UPROPERTY(EditAnywhere, Category = "Runtime")
+	float ZOffset = 50.f;
 
 protected:
 	void BuildLevel();
+	FTransform AddOffsetinZ(const FTransform& InTransform, float ZVal) const;
+
+private:
+	bool bPlayerStartSpawned = false;	
+
 
 };

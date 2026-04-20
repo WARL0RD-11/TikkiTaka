@@ -206,19 +206,20 @@ AActor* ATT_RuntimeLevelEditor::SpawnPreviewForRecord(const FTT_CustomPlacedActo
 	}
 
 	Spawned->Tags.Add(Record.InstanceId);
-
-	// Ensure preview actors do not interact as gameplay actors.
-	Spawned->SetActorEnableCollision(false);
 	Spawned->SetActorTickEnabled(false);
 
+	// IMPORTANT:
+	// Preview actors must be traceable by mouse clicks, but should not act like real gameplay collision.
 	TArray<UActorComponent*> Components;
 	Spawned->GetComponents(UPrimitiveComponent::StaticClass(), Components);
 	for (UActorComponent* Comp : Components)
 	{
 		if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
 		{
-			Prim->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Prim->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 			Prim->SetGenerateOverlapEvents(false);
+			Prim->SetCollisionResponseToAllChannels(ECR_Ignore);
+			Prim->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 		}
 	}
 
@@ -287,7 +288,6 @@ void ATT_RuntimeLevelEditor::RefreshGhostPreview()
 		return;
 	}
 
-	GhostPreviewActor->SetActorEnableCollision(false);
 	GhostPreviewActor->SetActorTickEnabled(false);
 
 	TArray<UActorComponent*> Components;
@@ -327,8 +327,6 @@ void ATT_RuntimeLevelEditor::UpdateGhostVisualState()
 		return;
 	}
 
-	// Minimal visual signal in C++.
-	// Use Blueprint materials for full red/green ghost behavior.
 	const FVector DesiredScale = bGhostPlacementValid
 		? FVector(1.f, 1.f, 1.f)
 		: FVector(1.f, 1.f, 0.96f);
@@ -352,10 +350,15 @@ bool ATT_RuntimeLevelEditor::PlaceAtWorldLocation(const FVector& WorldLocation, 
 	NewRecord.Type = CurrentPlacementType;
 	NewRecord.Transform = FTransform(WorldRotation, SnappedLocation);
 
-	WorkingActors.Add(NewRecord);
 	AActor* NewPreview = SpawnPreviewForRecord(NewRecord);
+	if (!IsValid(NewPreview))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to spawn preview for placed actor."));
+		return false;
+	}
 
-	// Update selection to new actor
+	WorkingActors.Add(NewRecord);
+
 	if (AActor** OldSelected = PreviewActorMap.Find(SelectedInstanceId))
 	{
 		SetPreviewHighlight(*OldSelected, false);
@@ -363,6 +366,16 @@ bool ATT_RuntimeLevelEditor::PlaceAtWorldLocation(const FVector& WorldLocation, 
 
 	SelectedInstanceId = NewRecord.InstanceId;
 	SetPreviewHighlight(NewPreview, true);
+
+	if (GhostPreviewActor)
+	{
+		GhostPreviewActor->SetActorTransform(NewRecord.Transform);
+	}
+
+	if (LevelEditorWidget)
+	{
+		LevelEditorWidget->RefreshDetailsPanel();
+	}
 
 	return true;
 }
@@ -385,6 +398,13 @@ bool ATT_RuntimeLevelEditor::SelectByPreviewActor(AActor* PreviewActor)
 		{
 			SelectedInstanceId = Pair.Key;
 			SetPreviewHighlight(PreviewActor, true);
+
+			if (LevelEditorWidget)
+			{
+				LevelEditorWidget->RefreshDetailsPanel();
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("Selected preview actor: %s"), *SelectedInstanceId.ToString());
 			return true;
 		}
 	}
@@ -400,6 +420,11 @@ void ATT_RuntimeLevelEditor::ClearSelection()
 	}
 
 	SelectedInstanceId = NAME_None;
+
+	if (LevelEditorWidget)
+	{
+		LevelEditorWidget->RefreshDetailsPanel();
+	}
 }
 
 FTT_CustomPlacedActor* ATT_RuntimeLevelEditor::FindSelectedRecord()
@@ -487,7 +512,18 @@ bool ATT_RuntimeLevelEditor::DeleteSelected()
 		}
 	}
 
+	if (DeletedId == PatrolLinkTankInstanceId)
+	{
+		PatrolLinkTankInstanceId = NAME_None;
+	}
+
 	SelectedInstanceId = NAME_None;
+
+	if (LevelEditorWidget)
+	{
+		LevelEditorWidget->RefreshDetailsPanel();
+	}
+
 	return true;
 }
 
@@ -549,29 +585,46 @@ bool ATT_RuntimeLevelEditor::UpdateSelectedTankTuning(const FTT_TankTuning& NewT
 
 bool ATT_RuntimeLevelEditor::LinkSelectedTankToPatrolPoint(FName PatrolPointId)
 {
-	FTT_CustomPlacedActor* Record = FindSelectedRecord();
-	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
+	FName TargetTankId = PatrolLinkTankInstanceId;
+
+	if (TargetTankId.IsNone())
 	{
+		const FTT_CustomPlacedActor* Record = FindSelectedRecordConst();
+		if (Record && Record->Type == ETT_CustomPlaceableType::EnemyTank)
+		{
+			TargetTankId = Record->InstanceId;
+		}
+	}
+
+	if (TargetTankId.IsNone())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LinkSelectedTankToPatrolPoint failed: no selected/armed enemy tank."));
 		return false;
 	}
 
-	if (!Record->LinkedPatrolPointIds.Contains(PatrolPointId))
-	{
-		Record->LinkedPatrolPointIds.Add(PatrolPointId);
-	}
-	return true;
+	return LinkPatrolPointToTank(TargetTankId, PatrolPointId);
 }
 
 bool ATT_RuntimeLevelEditor::UnlinkSelectedTankFromPatrolPoint(FName PatrolPointId)
 {
-	FTT_CustomPlacedActor* Record = FindSelectedRecord();
-	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
+	FName TargetTankId = PatrolLinkTankInstanceId;
+
+	if (TargetTankId.IsNone())
 	{
+		const FTT_CustomPlacedActor* Record = FindSelectedRecordConst();
+		if (Record && Record->Type == ETT_CustomPlaceableType::EnemyTank)
+		{
+			TargetTankId = Record->InstanceId;
+		}
+	}
+
+	if (TargetTankId.IsNone())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UnlinkSelectedTankFromPatrolPoint failed: no selected/armed enemy tank."));
 		return false;
 	}
 
-	Record->LinkedPatrolPointIds.Remove(PatrolPointId);
-	return true;
+	return UnlinkPatrolPointFromTank(TargetTankId, PatrolPointId);
 }
 
 bool ATT_RuntimeLevelEditor::ValidateLevel(FString& OutError) const
@@ -646,9 +699,45 @@ bool ATT_RuntimeLevelEditor::SaveLevel(const FString& LevelName, bool bAddToCamp
 		return false;
 	}
 
+	bool bFinalAddToCampaign = bAddToCampaign;
+
+	// Preserve previous "add to campaign" state unless explicitly disabled by deletion or another dedicated action.
+	if (!bFinalAddToCampaign && UGameplayStatics::DoesSaveGameExist(GCustomLevelSlotName, GCustomLevelSlotIndex))
+	{
+		if (UTT_CustomLevelSaveGame* ExistingSave = Cast<UTT_CustomLevelSaveGame>(
+			UGameplayStatics::LoadGameFromSlot(GCustomLevelSlotName, GCustomLevelSlotIndex)))
+		{
+			bFinalAddToCampaign = ExistingSave->SavedLevel.bAddToCampaignProgression;
+		}
+	}
+
 	SaveObj->SavedLevel.LevelDisplayName = LevelName;
 	SaveObj->SavedLevel.PlacedActors = WorkingActors;
-	SaveObj->SavedLevel.bAddToCampaignProgression = bAddToCampaign;
+	SaveObj->SavedLevel.bAddToCampaignProgression = bFinalAddToCampaign;
+
+	UE_LOG(LogTemp, Warning, TEXT("SaveLevel: LevelName=%s RequestedAdd=%s FinalAdd=%s"),
+		*LevelName,
+		bAddToCampaign ? TEXT("true") : TEXT("false"),
+		bFinalAddToCampaign ? TEXT("true") : TEXT("false"));
+
+	for (const FTT_CustomPlacedActor& Record : WorkingActors)
+	{
+		if (Record.Type == ETT_CustomPlaceableType::EnemyTank)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Saving tank %s with %d patrol links"),
+				*Record.InstanceId.ToString(),
+				Record.LinkedPatrolPointIds.Num());
+
+			for (const FName& PatrolId : Record.LinkedPatrolPointIds)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("  PatrolLink -> %s"), *PatrolId.ToString());
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("SaveLevel: LevelName=%s AddToCampaign=%s"),
+		*LevelName,
+		bAddToCampaign ? TEXT("true") : TEXT("false"));
 
 	const bool bSaved = UGameplayStatics::SaveGameToSlot(
 		SaveObj,
@@ -660,7 +749,7 @@ bool ATT_RuntimeLevelEditor::SaveLevel(const FString& LevelName, bool bAddToCamp
 		if (UTT_GameInstance* GI = Cast<UTT_GameInstance>(GetGameInstance()))
 		{
 			GI->bHasSavedCustomLevel = true;
-			GI->SetCustomLevelAddedToProgression(bAddToCampaign);
+			GI->SetCustomLevelAddedToProgression(bFinalAddToCampaign);
 		}
 	}
 
@@ -686,6 +775,11 @@ bool ATT_RuntimeLevelEditor::LoadLevel()
 	SelectedInstanceId = NAME_None;
 	RebuildAllPreviewActors();
 
+	if (LevelEditorWidget)
+	{
+		LevelEditorWidget->RefreshDetailsPanel();
+	}
+
 	return true;
 }
 
@@ -695,4 +789,146 @@ void ATT_RuntimeLevelEditor::PlayNow()
 	{
 		GI->PlayCustomLevelNow();
 	}
+}
+
+void ATT_RuntimeLevelEditor::ClearCurrentLevel()
+{
+	for (TPair<FName, AActor*>& Pair : PreviewActorMap)
+	{
+		if (IsValid(Pair.Value))
+		{
+			Pair.Value->Destroy();
+		}
+	}
+	PreviewActorMap.Empty();
+
+	WorkingActors.Empty();
+	SelectedInstanceId = NAME_None;
+
+	bGhostPlacementValid = false;
+	RefreshGhostPreview();
+
+	UE_LOG(LogTemp, Log, TEXT("Level Editor: Cleared current level contents."));
+}
+
+bool ATT_RuntimeLevelEditor::DeleteCurrentLevel()
+{
+	ClearCurrentLevel();
+
+	bool bDeletedSave = true;
+	if (UGameplayStatics::DoesSaveGameExist(GCustomLevelSlotName, GCustomLevelSlotIndex))
+	{
+		bDeletedSave = UGameplayStatics::DeleteGameInSlot(GCustomLevelSlotName, GCustomLevelSlotIndex);
+		if (!bDeletedSave)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Level Editor: Failed to delete custom level save slot."));
+			return false;
+		}
+	}
+
+	if (UTT_GameInstance* GI = Cast<UTT_GameInstance>(GetGameInstance()))
+	{
+		GI->bHasSavedCustomLevel = false;
+		GI->SetCustomLevelAddedToProgression(false);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Level Editor: Deleted current custom level and removed it from campaign."));
+	return true;
+}
+
+bool ATT_RuntimeLevelEditor::BeginPatrolLinkForSelectedTank()
+{
+	const FTT_CustomPlacedActor* Record = FindSelectedRecordConst();
+	if (!Record || Record->Type != ETT_CustomPlaceableType::EnemyTank)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BeginPatrolLinkForSelectedTank failed: selected actor is not an enemy tank."));
+		return false;
+	}
+
+	PatrolLinkTankInstanceId = Record->InstanceId;
+
+	UE_LOG(LogTemp, Warning, TEXT("Patrol linking armed for tank: %s"), *PatrolLinkTankInstanceId.ToString());
+	return true;
+}
+
+void ATT_RuntimeLevelEditor::ClearPatrolLinkTarget()
+{
+	PatrolLinkTankInstanceId = NAME_None;
+}
+
+bool ATT_RuntimeLevelEditor::LinkPatrolPointToTank(FName TankInstanceId, FName PatrolPointId)
+{
+	if (TankInstanceId.IsNone() || PatrolPointId.IsNone())
+	{
+		return false;
+	}
+
+	FTT_CustomPlacedActor* TankRecord = nullptr;
+	bool bPatrolExists = false;
+
+	for (FTT_CustomPlacedActor& Record : WorkingActors)
+	{
+		if (Record.InstanceId == TankInstanceId &&
+			Record.Type == ETT_CustomPlaceableType::EnemyTank)
+		{
+			TankRecord = &Record;
+		}
+
+		if (Record.InstanceId == PatrolPointId &&
+			Record.Type == ETT_CustomPlaceableType::PatrolPoint)
+		{
+			bPatrolExists = true;
+		}
+	}
+
+	if (!TankRecord)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LinkPatrolPointToTank failed: tank record not found: %s"), *TankInstanceId.ToString());
+		return false;
+	}
+
+	if (!bPatrolExists)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LinkPatrolPointToTank failed: patrol point record not found: %s"), *PatrolPointId.ToString());
+		return false;
+	}
+
+	if (!TankRecord->LinkedPatrolPointIds.Contains(PatrolPointId))
+	{
+		TankRecord->LinkedPatrolPointIds.Add(PatrolPointId);
+		UE_LOG(LogTemp, Warning, TEXT("Linked patrol point %s to tank %s"),
+			*PatrolPointId.ToString(), *TankInstanceId.ToString());
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Tank %s now has %d patrol links"),
+		*TankInstanceId.ToString(),
+		TankRecord->LinkedPatrolPointIds.Num());
+
+	for (const FName& Id : TankRecord->LinkedPatrolPointIds)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("  Linked -> %s"), *Id.ToString());
+	}
+
+	return true;
+}
+
+bool ATT_RuntimeLevelEditor::UnlinkPatrolPointFromTank(FName TankInstanceId, FName PatrolPointId)
+{
+	if (TankInstanceId.IsNone() || PatrolPointId.IsNone())
+	{
+		return false;
+	}
+
+	for (FTT_CustomPlacedActor& Record : WorkingActors)
+	{
+		if (Record.InstanceId == TankInstanceId &&
+			Record.Type == ETT_CustomPlaceableType::EnemyTank)
+		{
+			Record.LinkedPatrolPointIds.Remove(PatrolPointId);
+			UE_LOG(LogTemp, Warning, TEXT("Unlinked patrol point %s from tank %s"), *PatrolPointId.ToString(), *TankInstanceId.ToString());
+			return true;
+		}
+	}
+
+	return false;
 }

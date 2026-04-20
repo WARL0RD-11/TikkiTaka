@@ -23,6 +23,9 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	UFUNCTION(BlueprintCallable)
+	void RefreshDetailsPanel();
+
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	ATT_RuntimeLevelEditor* EditorManager = nullptr;
@@ -76,5 +79,11 @@ protected:
 	void OnClearSelection();
 
 	void RefreshStatusText();
+
+	UFUNCTION(BlueprintCallable)
+	void OnClearLevel();
 	
+
+	UFUNCTION(BlueprintCallable)
+	void OnDeleteLevel();
 };

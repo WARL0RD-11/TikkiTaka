@@ -71,8 +71,10 @@ void ATT_LevelEditorController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
+
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
 	{
+
 		if (LeftClickAction)
 		{
 			EIC->BindAction(LeftClickAction, ETriggerEvent::Started, this, &ATT_LevelEditorController::HandleLeftClick);
@@ -87,6 +89,7 @@ void ATT_LevelEditorController::SetupInputComponent()
 			EIC->BindAction(RotateRightAction, ETriggerEvent::Started, this, &ATT_LevelEditorController::RotatePlacementRight);
 		}
 	}
+
 }
 
 void ATT_LevelEditorController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -135,6 +138,15 @@ void ATT_LevelEditorController::HandleLeftClick(const FInputActionValue& ActionV
 		{
 			return;
 		}
+	}
+
+	if (GEngine && IsValid(Hit.GetActor()))
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			2.f,
+			FColor::Yellow,
+			FString::Printf(TEXT("Clicked Actor: %s"), *Hit.GetActor()->GetName()));
 	}
 
 	if (!EditorManager->IsGhostPlacementValid())

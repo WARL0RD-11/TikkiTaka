@@ -40,6 +40,21 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsPatrolPointLinkedForSelectedTank(FName PatrolPointId) const;
 
+	UFUNCTION(BlueprintCallable)
+	FName GetSelectedInstanceId() const;
+
+	UFUNCTION(BlueprintCallable)
+	ETT_CustomPlaceableType GetSelectedPlaceableType() const;
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FTT_CustomPlacedActor> GetAvailablePatrolPointRecords() const;
+
+	UPROPERTY()
+	FName LastRefreshedSelectionId = NAME_None;
+
+	UFUNCTION(BlueprintCallable)
+	void ForceRefreshFromEditorState();
+
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	ATT_RuntimeLevelEditor* EditorManager = nullptr;
